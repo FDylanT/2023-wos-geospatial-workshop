@@ -619,6 +619,28 @@ replace the existing one.</code></pre>
 </div>
 </div>
 </section>
+<section id="d-add-labels" class="level3">
+<h3 class="anchored" data-anchor-id="d-add-labels">d) Add labels</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>Georges <span class="sc">+</span></span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_label</span>(<span class="at">data =</span> fishing, <span class="fu">aes</span>(<span class="at">x =</span> Long, <span class="at">y =</span> Lat, <span class="at">label =</span> Site))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="geospatial-mapping-ornith_files/figure-html/unnamed-chunk-25-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="e-plot-both-points-and-labels" class="level3">
+<h3 class="anchored" data-anchor-id="e-plot-both-points-and-labels">e) Plot both points and labels</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>Georges <span class="sc">+</span></span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> fishing, <span class="fu">aes</span>(<span class="at">x =</span> Long, <span class="at">y =</span> Lat), <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_label</span>(<span class="at">data =</span> fishing, <span class="fu">aes</span>(<span class="at">x =</span> Long, <span class="at">y =</span> Lat, <span class="at">label =</span> Site),</span>
+<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a>             <span class="at">nudge_x =</span> <span class="fl">0.08</span>, <span class="at">nudge_y =</span> <span class="fl">0.08</span>, <span class="at">size =</span> <span class="fl">2.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="geospatial-mapping-ornith_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
 </section>
 <section id="the-end" class="level2">
 <h2 class="anchored" data-anchor-id="the-end">The end!</h2>
