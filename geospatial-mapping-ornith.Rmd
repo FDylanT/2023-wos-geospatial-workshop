@@ -6,7 +6,7 @@ editor_options:
   chunk_output_type: console
 ---
 
-## Libraries we'll use
+## 1) Load packages we'll use
 
 ```{r}
 library(tidyverse)
@@ -17,36 +17,39 @@ library(raster)
 library(marmap)
 ```
 
-## 1) Build a basemap
+## 2) Build a basemap
 
 ### a) ...using a satellite image
 
-##### Register Google API key
+#### Register Google API key
 
 To obtain an API key and enable services, go to <https://mapsplatform.google.com>. (Also note that your API key should be kept secure, as sharing it publicly can open your account up to being compromised.)
 
 My code chunk is hidden here, but the function to register your API key in an R session takes the form `register_google(key = "PERSONAL API KEY")`.
 
 ```{r, include=FALSE}
-register_google(key = "PERSONAL API KEY")
+register_google(key = "AIzaSyBn1OxFq4DMK79J4qHmQoBvFlbHbeImABw")
 ```
 
-##### Create basemap
+#### Extract satellite map from Google Maps
+
+Right click on a Google Maps page to get coordinates. Also note that _longitude_ comes first inside the coordinate parentheses.
+
+```{r}
+island_map <- get_map(location = c(-70.614, 42.9885),
+                      zoom = 16,
+                      maptype = "satellite",
+                      source = "google",
+                      color = "color") # use "bw" for a black-and-white satellite image
+```
+
+#### Create basemap
 
 When transforming the earth from its 3-D spherical shape to a 2-D shape, various distinct projections may be used depending on the scale and purposes of a given map. A Coordinate Reference System (CRS) defines how a specific two-dimensional projection relates to real places on the earth, and therefore is an important specification in geospatial mapping. Here, we use the most popular geodetic datum, WGS84 (World Geodetic System 1984), represented by the EPSG code 4326.
 
 Within `get_map()`, feel free to experiment with the other `maptype` options for maps sourced from Google or Stamen, examples here: <https://r-graph-gallery.com/324-map-background-with-the-ggmap-library.html>.
 
 ```{r}
-# extract satellite map from Google Maps
-  # right click on map to get coordinates
-  # note that *longitude* comes first
-island_map <- get_map(c(-70.614, 42.9885),
-                      maptype = "satellite",
-                      zoom = 16,
-                      source = "google")
-
-# create basemap using ggmap
 satmap <- ggmap(island_map) +
   coord_sf(crs = 4326) +
   theme(axis.title = element_blank())
@@ -54,8 +57,11 @@ satmap <- ggmap(island_map) +
 # note that the CRS is set in `coord_sf()` solely for the sake of formatting the axis labels; the satellite map is already set to WGS84/EPSG:4326.
 
 satmap
+```
 
-# zoom in a bit more by setting coordinate axis limits
+#### Zoom in a bit more by setting coordinate axis limits
+
+```{r}
 satmap <- satmap +
   xlim(c(-70.619, -70.6094)) +
   ylim(c(42.9842, 42.9928))
@@ -67,7 +73,7 @@ satmap
 
 The `elevatr` package provides access to raster elevation data from AWS Open Data [Terrain Tiles](https://registry.opendata.aws/terrain-tiles/) and the Open Topography [Global datasets API](https://opentopography.org/developers#API).
 
-##### Prepare `locations` parameter
+#### Prepare `locations` parameter
 
 This is the object that we will use to crop the global elevation data.
 
@@ -90,10 +96,10 @@ loc_sf <- st_as_sf(loc,
                    crs = 4326)
 ```
 
-##### Get elevation data
+#### Fetch elevation data
 
 ```{r}
-elevation <- get_elev_raster(locations = loc_sf2[1, 1],
+elevation <- get_elev_raster(locations = loc_sf,
                              z = 14,
                              clip = "bbox")
 
@@ -107,7 +113,7 @@ elevation_df <- as.data.frame(elevation) %>%
 colnames(elevation_df)[3] <- "elevation"
 ```
 
-##### Plot topographic map
+#### Plot topographic map
 
 ```{r}
 ggplot() +
@@ -115,7 +121,7 @@ ggplot() +
   			aes(x = x, y = y, fill = elevation))
 ```
 
-##### Change colour scale
+#### Change colour scale
 
 ```{r}
 # set all sea level points to the same value to create uniform background
@@ -137,7 +143,7 @@ elevmap <- ggplot() +
 elevmap
 ```
 
-##### Set CRS to fix axis proportions; add other edits
+#### Set CRS to fix axis proportions; add other edits
 
 ```{r}
 elevmap <- elevmap +
@@ -148,15 +154,15 @@ elevmap <- elevmap +
 elevmap
 ```
 
-## 2) Import point data and add to plot
+## 3) Import and plot point data
 
-##### Import nest data
+#### Import nest data
 
 ```{r}
-nests <- read.csv("~/Desktop/Repos/spatial-demo/2022_GBBGnests.csv")
+nests <- read.csv("~/Desktop/Repos/wos2023-r-geospatial/workshop-files/2022_GBBGnests.csv")
 ```
 
-##### Optional: create a simple features object from nest data
+#### Optional: create a simple features object from nest data
 
 ```{r}
 nests_sf <- st_as_sf(nests,
@@ -164,31 +170,52 @@ nests_sf <- st_as_sf(nests,
                      crs = 4326)
 ```
 
-##### Plot points on a satellite map
+#### Plot points on a satellite map
 
+```{r}
+satmap +
+  geom_point(data = nests, aes(x = Long, y = Lat))
+  # use the line below if you are adding points with simple features geometry
+  #geom_sf(data = nests_sf, inherit.aes = FALSE)
+```
+
+#### Change point colour and style
 ```{r}
 satmap <- satmap +
   geom_point(data = nests, aes(x = Long, y = Lat), shape = 21, fill = "white", size = 2.5)
   #geom_sf(data = nests_sf, inherit.aes = FALSE)
 
 satmap
-
-satmap +
-  coord_sf(xlim = c(-70.617, -70.611), ylim = c(42.988, 42.990), crs = 4326)
 ```
 
-##### Plot points on a topographic map
+#### Zoom into a subsection of the map
+
+```{r}
+satmap +
+  coord_sf(xlim = c(-70.617, -70.6105), ylim = c(42.988, 42.990), crs = 4326)
+```
+
+#### Vary point colour with another variable
+
+```{r}
+satmap +
+  geom_point(data = nests, aes(x = Long, y = Lat, fill = factor(Eggs)), shape = 21, size = 2.5) +
+  scale_fill_manual(values = c("dodgerblue", "goldenrod1", "white"), name = "Number\nof Eggs") +
+  theme(legend.title = element_text(face = "bold"))
+```
+
+#### Plot points on a topographic map
 
 ```{r}
 elevmap +
   geom_point(data = nests, aes(x = Long, y = Lat), shape = 21, fill = "white", size = 2.5)
 ```
 
-## 3) Other possibilities
+## 4) Other possibilities
 
 For these final examples, we will use a dataset of fishing sites on Georges Bank in the north Atlantic.
 
-##### Create basemap
+#### First, create the basemap we'll use
 
 ```{r}
 # import bathymetric data from NOAA's ETOPO 2022 database
@@ -227,7 +254,7 @@ Georges <- Georges +
 Georges
 ```
 
-### Add high-resolution coastline
+### a) Add high-resolution coastline
 
 GSHHG (Global Self-consistent, Hierarchical, High-resolution Geography) shoreline data can be downloaded from <https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest>.
 
@@ -258,12 +285,12 @@ Georges <- Georges +
 Georges
 ```
 
-### Import polygons and plot on map
+### b) Import and plot spatial polygons
 
-##### Import scallop fishing zone data
+#### Import scallop fishing zone data
 
 ```{r}
-GB <- read_sf("~/Desktop/Repos/spatial-demo/2020SAMZones/GB_Estimation_Areas_2019_UTM19_PDT_SFModified.shp")
+GB <- read_sf("~/Desktop/Repos/wos2023-r-geospatial/workshop-files/2020SAMZones/GB_Estimation_Areas_2019_UTM19_PDT_SFModified.shp")
 
 # subset open fishing areas
 GSC <- subset(GB, NewSAMS == "GSC")
@@ -274,10 +301,10 @@ NLS_West <- subset(GB, NewSAMS == "NLS-West")
 
 Note that the innate CRS of this polygon collection is NAD83 / UTM zone 19N (which is EPSG:26919), *not* WGS 84; therefore it is important that we set the CRS to EPSG:4326 in `coord_sf()` in order to align with our existing basemap.
 
-##### Plot polygons
+#### Plot polygons
 
 ```{r}
-Georges <- Georges +
+Georges +
   geom_sf(data = GSC, fill = NA, colour = "black",
           linewidth = 0.4, linetype = "dashed") +
   geom_sf(data = NF, fill = NA, colour = "black",
@@ -287,19 +314,43 @@ Georges <- Georges +
   geom_sf(data = NLS_West, fill = NA, colour = "black",
           linewidth = 0.4, linetype = "dashed") +
   coord_sf(xlim = c(-70.5, -66), ylim = c(40, 42.5), crs = st_crs(4326))
+```
+
+#### Colour polygons
+
+```{r}
+Georges <- Georges +
+  geom_sf(data = GSC, fill = "firebrick1", alpha = 0.5, colour = "black",
+          linewidth = 0.4, linetype = "dashed") +
+  geom_sf(data = NF, fill = "firebrick1", alpha = 0.5, colour = "black",
+          linewidth = 0.4, linetype = "dashed") +
+  geom_sf(data = CL2_AccessSoutheast, fill = "firebrick1", alpha = 0.5, colour = "black",
+          linewidth = 0.4, linetype = "dashed") +
+  geom_sf(data = NLS_West, fill = "firebrick1", alpha = 0.5, colour = "black",
+          linewidth = 0.4, linetype = "dashed") +
+  coord_sf(xlim = c(-70.5, -66), ylim = c(40, 42.5), crs = st_crs(4326))
 
 Georges
 ```
 
-##### Import and plot point data
+#### Import and plot point data
 
 ```{r}
-fishing <- read.csv("~/Desktop/Repos/spatial-demo/OctFishingData.csv") %>%
+fishing <- read.csv("~/Desktop/Repos/wos2023-r-geospatial/workshop-files/OctFishingData.csv") %>%
   rename(Lat = Latitude_degrees_start,
          Long = Longitude_degrees_start)
 
 Georges +
-  geom_point(data = fishing, aes(x = Long, y = Lat), shape = 17)
+  geom_point(data = fishing, aes(x = Long, y = Lat), shape = 17, size = 2)
 ```
 
-Thanks so much for viewing! Please feel free to reach out to me at `dylan.titmuss@whoi.edu` with any questions or thoughts. :)
+### c) Vary point size with another variable
+
+```{r}
+Georges +
+  geom_point(data = fishing, aes(x = Long, y = Lat, size = Tow_abundance), shape = 17)
+```
+
+## The end!
+
+Thanks so much for viewing! Please feel free to reach out to me at `dylan.titmuss@whoi.edu` with any questions or other thoughts. :)
