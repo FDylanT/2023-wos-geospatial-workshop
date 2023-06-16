@@ -33,7 +33,7 @@ register_google(key = "AIzaSyBn1OxFq4DMK79J4qHmQoBvFlbHbeImABw")
 
 #### Extract satellite map from Google Maps
 
-Right click on a Google Maps page to get coordinates. Also note that _longitude_ comes first inside the coordinate parentheses.
+Right click on a Google Maps page to get coordinates. Also note that *longitude* comes first inside the coordinate parentheses.
 
 ```{r}
 island_map <- get_map(location = c(-70.614, 42.9885),
@@ -180,6 +180,7 @@ satmap +
 ```
 
 #### Change point colour and style
+
 ```{r}
 satmap <- satmap +
   geom_point(data = nests, aes(x = Long, y = Lat), shape = 21, fill = "white", size = 2.5)
@@ -349,6 +350,22 @@ Georges +
 ```{r}
 Georges +
   geom_point(data = fishing, aes(x = Long, y = Lat, size = Tow_abundance), shape = 17)
+```
+
+### d) Add labels
+
+```{r}
+Georges +
+  geom_label(data = fishing, aes(x = Long, y = Lat, label = Site))
+```
+
+### e) Plot both points and labels
+
+```{r}
+Georges +
+  geom_point(data = fishing, aes(x = Long, y = Lat), size = 2) +
+  geom_label(data = fishing, aes(x = Long, y = Lat, label = Site),
+             nudge_x = 0.08, nudge_y = 0.08, size = 2.5)
 ```
 
 ## The end!
