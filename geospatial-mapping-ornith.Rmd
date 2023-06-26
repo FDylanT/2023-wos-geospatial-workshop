@@ -35,6 +35,8 @@ register_google(key = "AIzaSyBn1OxFq4DMK79J4qHmQoBvFlbHbeImABw")
 
 Right click on a Google Maps page to get coordinates. Also note that *longitude* comes first inside the coordinate parentheses.
 
+Within `get_map()`, feel free to experiment with the other `maptype` options for maps sourced from Google or Stamen, examples here: <https://r-graph-gallery.com/324-map-background-with-the-ggmap-library.html>.
+
 ```{r, message = FALSE}
 island_map <- get_map(location = c(-70.614, 42.9885),
                       zoom = 16,
@@ -47,8 +49,6 @@ island_map <- get_map(location = c(-70.614, 42.9885),
 #### Create basemap
 
 When transforming the earth from its 3-D spherical shape to a 2-D shape, various distinct projections may be used depending on the scale and purposes of a given map. A Coordinate Reference System (CRS) defines how a specific two-dimensional projection relates to real places on the earth, and therefore is an important specification in geospatial mapping. Here, we use the most popular geodetic datum, WGS84 (World Geodetic System 1984), represented by the EPSG code 4326.
-
-Within `get_map()`, feel free to experiment with the other `maptype` options for maps sourced from Google or Stamen, examples here: <https://r-graph-gallery.com/324-map-background-with-the-ggmap-library.html>.
 
 ```{r}
 # note that the CRS is set in `coord_sf()` solely for the sake of formatting the
