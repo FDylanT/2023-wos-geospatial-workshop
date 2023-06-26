@@ -28,7 +28,7 @@ To obtain an API key and enable services, go to <https://mapsplatform.google.com
 My next code chunk is hidden here, but the function to register your API key in an R session takes the form `register_google(key = "PERSONAL API KEY")`.
 
 ```{r, include = FALSE}
-register_google(key = "AIzaSyBn1OxFq4DMK79J4qHmQoBvFlbHbeImABw")
+register_google(key = "PERSONAL API KEY")
 ```
 
 #### Extract satellite map from Google Maps
