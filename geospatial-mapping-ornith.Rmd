@@ -8,7 +8,7 @@ editor_options:
 
 ## 1) Load packages we'll use
 
-```{r}
+```{r, message = FALSE}
 library(tidyverse)
 library(ggmap)
 library(sf)
@@ -25,9 +25,9 @@ library(marmap)
 
 To obtain an API key and enable services, go to <https://mapsplatform.google.com>. (Also note that your API key should be kept secure, as sharing it publicly can open your account up to being compromised.)
 
-My code chunk is hidden here, but the function to register your API key in an R session takes the form `register_google(key = "PERSONAL API KEY")`.
+My next code chunk is hidden here, but the function to register your API key in an R session takes the form `register_google(key = "PERSONAL API KEY")`.
 
-```{r, include=FALSE}
+```{r, include = FALSE}
 register_google(key = "AIzaSyBn1OxFq4DMK79J4qHmQoBvFlbHbeImABw")
 ```
 
@@ -35,12 +35,13 @@ register_google(key = "AIzaSyBn1OxFq4DMK79J4qHmQoBvFlbHbeImABw")
 
 Right click on a Google Maps page to get coordinates. Also note that *longitude* comes first inside the coordinate parentheses.
 
-```{r}
+```{r, message = FALSE}
 island_map <- get_map(location = c(-70.614, 42.9885),
                       zoom = 16,
                       maptype = "satellite",
                       source = "google",
-                      color = "color") # use "bw" for a black-and-white satellite image
+                      color = "color") # use "bw" for a black-and-white
+                                       # satellite image
 ```
 
 #### Create basemap
@@ -50,11 +51,12 @@ When transforming the earth from its 3-D spherical shape to a 2-D shape, various
 Within `get_map()`, feel free to experiment with the other `maptype` options for maps sourced from Google or Stamen, examples here: <https://r-graph-gallery.com/324-map-background-with-the-ggmap-library.html>.
 
 ```{r}
+# note that the CRS is set in `coord_sf()` solely for the sake of formatting the
+# axis labels; the satellite map is already set to WGS84/EPSG:4326.
+
 satmap <- ggmap(island_map) +
   coord_sf(crs = 4326) +
   theme(axis.title = element_blank())
-
-# note that the CRS is set in `coord_sf()` solely for the sake of formatting the axis labels; the satellite map is already set to WGS84/EPSG:4326.
 
 satmap
 ```
@@ -75,7 +77,7 @@ The `elevatr` package provides access to raster elevation data from AWS Open Dat
 
 #### Prepare `locations` parameter
 
-This is the object that we will use to crop the global elevation data.
+This is the object that we will use to crop the global elevation data to our study area.
 
 "Simple Features" is a commonly used set of GIS standards for storing and accessing data representing predominantly two-dimensional geographic features (e.g. points, lines, polygons).
 
@@ -84,12 +86,12 @@ This is the object that we will use to crop the global elevation data.
 min <- c(-70.619, 42.9842)
 max <- c(-70.6094, 42.9928)
 
-# create dataframe for bounding box
+# create data frame for bounding box
 loc <- rbind(min, max) %>%
   as.data.frame() %>%
   rename(Long = V1, Lat = V2)
 
-# convert dataframe into simple features object for mapping
+# convert data frame into "simple features" object for mapping
   # this serves to assign the data a CRS
 loc_sf <- st_as_sf(loc,
                    coords = c("Long", "Lat"),
@@ -106,10 +108,11 @@ elevation <- get_elev_raster(locations = loc_sf,
 # convert raster data to point data for plotting
 elevation <- rasterToPoints(elevation)
 
+# convert to data frame; remove missing data
 elevation_df <- as.data.frame(elevation) %>%
   na.omit()
 
-# rename the third column to make it easier to reference
+# rename the third column to make it easier to select going forward
 colnames(elevation_df)[3] <- "elevation"
 ```
 
@@ -121,7 +124,7 @@ ggplot() +
   			aes(x = x, y = y, fill = elevation))
 ```
 
-#### Change colour scale
+#### Change color scale
 
 ```{r}
 # set all sea level points to the same value to create uniform background
@@ -134,16 +137,16 @@ for(i in 1:nrow(elevation_df)) {
 elevmap <- ggplot() +
   geom_raster(data = elevation_df, 
   			aes(x = x, y = y, fill = elevation)) +
-  # change colour scale
-    # "rev" reverses the colour palette to make blue the color for low elevations
-    # (100) sets the number of individual values in the scale to create a smooth gradient
-    # [30:89] chooses a subset of colors from the palette
-  scale_fill_gradientn(colours = rev(etopo.colors(100)[30:89]))
+  # change color scale
+    # "rev" reverses the color palette to make blue the color for low elevations
+    # (100) sets the number of values in the scale to create a smooth gradient
+    # [30:90] chooses a subset of colors from the palette
+  scale_fill_gradientn(colors = rev(etopo.colors(100)[30:90]))
 
 elevmap
 ```
 
-#### Set CRS to fix axis proportions; add other edits
+#### Set CRS to fix axis proportions; remove axis titles, legend, and grey space
 
 ```{r}
 elevmap <- elevmap +
@@ -173,18 +176,24 @@ nests_sf <- st_as_sf(nests,
 #### Plot points on a satellite map
 
 ```{r}
+# if you are using point data
 satmap +
   geom_point(data = nests, aes(x = Long, y = Lat))
-  # use the line below if you are adding points with simple features geometry
-  #geom_sf(data = nests_sf, inherit.aes = FALSE)
+
+# if you created a simple features object
+satmap +
+  geom_sf(data = nests_sf, inherit.aes = FALSE)
 ```
 
-#### Change point colour and style
+#### Change point color and style
 
 ```{r}
 satmap <- satmap +
-  geom_point(data = nests, aes(x = Long, y = Lat), shape = 21, fill = "white", size = 2.5)
-  #geom_sf(data = nests_sf, inherit.aes = FALSE)
+  geom_point(data = nests, aes(x = Long, y = Lat),
+             shape = 21, fill = "white", size = 2.5)
+  # or
+  # geom_sf(data = nests_sf, inherit.aes = FALSE,
+  #         shape = 21, fill = "white", size = 2.5)
 
 satmap
 ```
@@ -196,12 +205,16 @@ satmap +
   coord_sf(xlim = c(-70.617, -70.6105), ylim = c(42.988, 42.990), crs = 4326)
 ```
 
-#### Vary point colour with another variable
+#### Vary point color with another variable; modify legend title
+
+Since `Eggs` is a quantitative but discrete variable (i.e. it's not possible to have 1.75 eggs at a nest), it's necessary to wrap it inside the `factor()` function to prevent R from reading it as a continuous variable .
 
 ```{r}
 satmap +
-  geom_point(data = nests, aes(x = Long, y = Lat, fill = factor(Eggs)), shape = 21, size = 2.5) +
-  scale_fill_manual(values = c("dodgerblue", "goldenrod1", "white"), name = "Number\nof Eggs") +
+  geom_point(data = nests, aes(x = Long, y = Lat, fill = factor(Eggs)),
+             shape = 21, size = 2.5) +
+  scale_fill_manual(values = c("dodgerblue", "goldenrod1", "white"),
+                    name = "Number\nof Eggs") +
   theme(legend.title = element_text(face = "bold"))
 ```
 
@@ -209,7 +222,8 @@ satmap +
 
 ```{r}
 elevmap +
-  geom_point(data = nests, aes(x = Long, y = Lat), shape = 21, fill = "white", size = 2.5)
+  geom_point(data = nests, aes(x = Long, y = Lat),
+             shape = 21, fill = "white", size = 2.5)
 ```
 
 ## 4) Other possibilities
@@ -245,7 +259,7 @@ Georges <- ggplot() +
 
 Georges
 
-# change default colour scale to shades of blue
+# change default color scale to shades of blue
 Georges <- Georges +
   scale_fill_manual(values = c("#08306B", "#084184", "#08519C", "#1561A9",
                                "#2171B5", "#3282BE", "#4292C6", "#57A0CE",
@@ -255,45 +269,28 @@ Georges <- Georges +
 Georges
 ```
 
-### a) Add high-resolution coastline
-
-GSHHG (Global Self-consistent, Hierarchical, High-resolution Geography) shoreline data can be downloaded from <https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest>.
-
-Spherical geometry is turned off because many polygons cannot be valid on S2 and R2 simultaneously, as outlined in <https://r-spatial.org/book/04-Spherical.html#validity-on-the-sphere>. (This is an excellent book for general referencing!)
-
-The `st_make_valid()` function serves to resolve any areas of geometry that are not topologically valid and thus would raise a GEOS error. Another useful function not needed here, `st_remove_holes()` (from the package `nngeo`), similarly resolves issues such as false slivers of space between contiguous polygons.
-
-```{r}
-# turn off spherical geometry to avoid "duplicate vertex" errors
-sf_use_s2(FALSE)
-
-# read shapefile from wherever the file is located
-mass <- read_sf("/Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/library/gshhg-shp-2.3.7/GSHHS_shp/f/GSHHS_f_L1.shp") %>%
-  st_make_valid() %>%
-  st_crop(xmin = -71, xmax = -66, ymin = 40, ymax = 43)
-
-# add to map
-Georges <- Georges +
-  geom_sf(data = mass, fill = "darkgrey", colour = "black") +
-  scale_fill_manual(values = c("#08306B", "#084184", "#08519C", "#1561A9",
-                               "#2171B5", "#3282BE", "#4292C6", "#57A0CE",
-                               "#6BAED6", "#85BCDC", "#9ECAE1", "#B2D3E8",
-                               "#C6DBEF"),
-                    na.value = "#C6DBEF") +   # cleans up pixelated coastline edges
-  coord_sf(xlim = c(-70.5, -66), ylim = c(40, 42.5)) +
-  scale_y_continuous(breaks = c(40, 41, 42))
-
-Georges
-```
-
-### b) Import and plot spatial polygons
+### a) Import and plot spatial polygons
 
 #### Import scallop fishing zone data
+
+Unlike most text files, some spatial data formats include a set of several files. A shapefile is created by three or more files, all of which must have the *same name* and be stored in the *same file directory* in order for you to be able to work with them.
+
+There are three key files associated with any and all shapefiles:
+
+* .shp: the file that contains the geometry for all features.
+* .shx: the file that indexes the geometry.
+* .dbf: the file that stores feature attributes in a tabular format.
+
+Sometimes, a shapefile will have other associated files including:
+
+* .prj: the file that contains information on projection format including the coordinate system and projection information.
+
+**In short: to get a "shapefile" to load, you must have matching .shp, .shx, and .dbf files together in the same folder, each with the same file name. In these examples, we also have matching .prj files, which save us from having to assign a CRS to the shapefile ourselves.**
 
 ```{r}
 GB <- read_sf("~/Desktop/Repos/wos2023-r-geospatial/workshop-files/2020SAMZones/GB_Estimation_Areas_2019_UTM19_PDT_SFModified.shp")
 
-# subset open fishing areas
+# subset selected fishing areas
 GSC <- subset(GB, NewSAMS == "GSC")
 NF <- subset(GB, NewSAMS == "NF")
 CL2_AccessSoutheast <- subset(GB, NewSAMS == "CL2-Access-Southeast")
@@ -306,29 +303,29 @@ Note that the innate CRS of this polygon collection is NAD83 / UTM zone 19N (whi
 
 ```{r}
 Georges +
-  geom_sf(data = GSC, fill = NA, colour = "black",
+  geom_sf(data = GSC, fill = NA, color = "black",
           linewidth = 0.4, linetype = "dashed") +
-  geom_sf(data = NF, fill = NA, colour = "black",
+  geom_sf(data = NF, fill = NA, color = "black",
           linewidth = 0.4, linetype = "dashed") +
-  geom_sf(data = CL2_AccessSoutheast, fill = NA, colour = "black",
+  geom_sf(data = CL2_AccessSoutheast, fill = NA, color = "black",
           linewidth = 0.4, linetype = "dashed") +
-  geom_sf(data = NLS_West, fill = NA, colour = "black",
+  geom_sf(data = NLS_West, fill = NA, color = "black",
           linewidth = 0.4, linetype = "dashed") +
   coord_sf(xlim = c(-70.5, -66), ylim = c(40, 42.5), crs = st_crs(4326))
 ```
 
-#### Colour polygons
+#### Add color to polygons
 
 ```{r}
 Georges <- Georges +
-  geom_sf(data = GSC, fill = "firebrick1", alpha = 0.5, colour = "black",
-          linewidth = 0.4, linetype = "dashed") +
-  geom_sf(data = NF, fill = "firebrick1", alpha = 0.5, colour = "black",
-          linewidth = 0.4, linetype = "dashed") +
-  geom_sf(data = CL2_AccessSoutheast, fill = "firebrick1", alpha = 0.5, colour = "black",
-          linewidth = 0.4, linetype = "dashed") +
-  geom_sf(data = NLS_West, fill = "firebrick1", alpha = 0.5, colour = "black",
-          linewidth = 0.4, linetype = "dashed") +
+  geom_sf(data = GSC, fill = "firebrick1", alpha = 0.5,
+          color = "black", linewidth = 0.4, linetype = "dashed") +
+  geom_sf(data = NF, fill = "firebrick1", alpha = 0.5,
+          color = "black", linewidth = 0.4, linetype = "dashed") +
+  geom_sf(data = CL2_AccessSoutheast, fill = "firebrick1", alpha = 0.5,
+          color = "black", linewidth = 0.4, linetype = "dashed") +
+  geom_sf(data = NLS_West, fill = "firebrick1", alpha = 0.5,
+          color = "black", linewidth = 0.4, linetype = "dashed") +
   coord_sf(xlim = c(-70.5, -66), ylim = c(40, 42.5), crs = st_crs(4326))
 
 Georges
@@ -338,34 +335,67 @@ Georges
 
 ```{r}
 fishing <- read.csv("~/Desktop/Repos/wos2023-r-geospatial/workshop-files/OctFishingData.csv") %>%
-  rename(Lat = Latitude_degrees_start,
-         Long = Longitude_degrees_start)
+  rename(Lat = Latitude_degrees_start, Long = Longitude_degrees_start)
 
 Georges +
-  geom_point(data = fishing, aes(x = Long, y = Lat), shape = 17, size = 2)
+  geom_point(data = fishing, aes(x = Long, y = Lat), shape = 18, size = 3)
 ```
 
-### c) Vary point size with another variable
+### b) Vary point size with another variable
 
 ```{r}
 Georges +
-  geom_point(data = fishing, aes(x = Long, y = Lat, size = Tow_abundance), shape = 17)
+  geom_point(data = fishing, aes(x = Long, y = Lat, size = Tow_abundance),
+             shape = 18) +
+  scale_size(range = c(3, 8)) # this sets the range of point sizes to use
 ```
 
-### d) Add labels
+### c) Plot labels
 
 ```{r}
 Georges +
   geom_label(data = fishing, aes(x = Long, y = Lat, label = Site))
 ```
 
-### e) Plot both points and labels
+### d) Plot both points and labels
 
 ```{r}
-Georges +
+Georges <- Georges +
   geom_point(data = fishing, aes(x = Long, y = Lat), size = 2) +
   geom_label(data = fishing, aes(x = Long, y = Lat, label = Site),
              nudge_x = 0.08, nudge_y = 0.08, size = 2.5)
+
+Georges
+```
+
+### e) Add high-resolution coastline; tweak y-axis interval
+
+GSHHG (Global Self-consistent, Hierarchical, High-resolution Geography) shoreline data can be downloaded from <https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest>.
+
+Spherical geometry is turned off because many polygons cannot be valid on S2 and R2 simultaneously, as outlined in <https://r-spatial.org/book/04-Spherical.html#validity-on-the-sphere>. (This is an excellent book for general referencing!)
+
+The `st_make_valid()` function serves to resolve any areas of geometry that are not topologically valid and thus would raise a GEOS error. Another useful function not needed here, `st_remove_holes()` (from the package `nngeo`), similarly resolves issues such as false slivers of space between contiguous polygons.
+
+```{r}
+# turn off spherical geometry to avoid "duplicate vertex" errors
+sf_use_s2(FALSE)
+
+# read shapefile from wherever the file is located
+mass <- read_sf("~/Desktop/Repos/wos2023-r-geospatial/workshop-files/GSHHS_f_L1/GSHHS_f_L1.shp") %>%
+  st_make_valid() %>%
+  st_crop(xmin = -71, xmax = -66, ymin = 40, ymax = 43)
+
+# add to map
+Georges +
+  geom_sf(data = mass, fill = "darkgrey", color = "black") +
+  scale_fill_manual(values = c("#08306B", "#084184", "#08519C", "#1561A9",
+                               "#2171B5", "#3282BE", "#4292C6", "#57A0CE",
+                               "#6BAED6", "#85BCDC", "#9ECAE1", "#B2D3E8",
+                               "#C6DBEF"),
+                    na.value = "#C6DBEF") +   # tidies pixelated coastline edges
+  coord_sf(xlim = c(-70.5, -66), ylim = c(40, 42.5), crs = 4326) +
+  # this next line changes the y-axis interval to only show whole-number degrees
+  scale_y_continuous(breaks = c(40, 41, 42))
 ```
 
 ## The end!
