@@ -33,7 +33,7 @@ register_google(key = "AIzaSyBn1OxFq4DMK79J4qHmQoBvFlbHbeImABw")
 
 #### Extract satellite map from Google Maps
 
-Right click on a Google Maps page to get coordinates. Also note that _longitude_ comes first inside the coordinate parentheses.
+Right click on a Google Maps page to get coordinates. Also note that *longitude* comes first inside the coordinate parentheses.
 
 ```{r}
 island_map <- get_map(location = c(-70.614, 42.9885),
