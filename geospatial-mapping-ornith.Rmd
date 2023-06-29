@@ -165,7 +165,7 @@ elevmap
 nests <- read.csv("~/Desktop/Repos/wos2023-r-geospatial/workshop-files/2022_GBBGnests.csv")
 ```
 
-#### Optional: create a simple features object from nest data
+#### Data-dependent: create a simple features object from nest data
 
 ```{r}
 nests_sf <- st_as_sf(nests,
