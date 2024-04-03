@@ -19,59 +19,7 @@ library(marmap)
 
 ## 2) Build a basemap
 
-### a) ...using a satellite image
-
-#### Register Google API key
-
-To obtain an API key and enable services, go to <https://mapsplatform.google.com>. (Also note that your API key should be kept secure, as sharing it publicly can open your account up to being compromised.)
-
-My next code chunk is hidden here, but the function to register your API key in an R session takes the form `register_google(key = "PERSONAL API KEY")`.
-
-```{r, include = FALSE}
-register_google(key = "PERSONAL API KEY")
-```
-
-#### Extract satellite map from Google Maps
-
-Right click on a Google Maps page to get coordinates. Also note that *longitude* comes first inside the coordinate parentheses.
-
-Within `get_map()`, feel free to experiment with the other `maptype` options for maps sourced from Google or Stamen, examples here: <https://r-graph-gallery.com/324-map-background-with-the-ggmap-library.html>.
-
-```{r, message = FALSE}
-island_map <- get_map(location = c(-70.614, 42.9885),
-                      zoom = 16,
-                      maptype = "satellite",
-                      source = "google",
-                      color = "color") # use "bw" for a black-and-white
-                                       # satellite image
-```
-
-#### Create basemap
-
-When transforming the earth from its 3-D spherical shape to a 2-D shape, various distinct projections may be used depending on the scale and purposes of a given map. A Coordinate Reference System (CRS) defines how a specific two-dimensional projection relates to real places on the earth, and therefore is an important specification in geospatial mapping. Here, we use the most popular geodetic datum, WGS84 (World Geodetic System 1984), represented by the EPSG code 4326.
-
-```{r}
-# note that the CRS is set in `coord_sf()` solely for the sake of formatting the
-# axis labels; the satellite map is already set to WGS84/EPSG:4326.
-
-satmap <- ggmap(island_map) +
-  coord_sf(crs = 4326) +
-  theme(axis.title = element_blank())
-
-satmap
-```
-
-#### Zoom in a bit more by setting coordinate axis limits
-
-```{r}
-satmap <- satmap +
-  xlim(c(-70.619, -70.6094)) +
-  ylim(c(42.9842, 42.9928))
-
-satmap
-```
-
-### b) ...using topographic data
+### a) ...using topographic data
 
 The `elevatr` package provides access to raster elevation data from AWS Open Data [Terrain Tiles](https://registry.opendata.aws/terrain-tiles/) and the Open Topography [Global datasets API](https://opentopography.org/developers#API).
 
@@ -155,6 +103,58 @@ elevmap <- elevmap +
         legend.position = "none")
 
 elevmap
+```
+
+### b) ...using a satellite image
+
+#### Register Google API key
+
+To obtain an API key and enable services, go to <https://mapsplatform.google.com>. (Also note that your API key should be kept secure, as sharing it publicly can open your account up to being compromised.)
+
+My next code chunk is hidden here, but the function to register your API key in an R session takes the form `register_google(key = "PERSONAL API KEY")`.
+
+```{r, include = FALSE}
+register_google(key = "PERSONAL API KEY")
+```
+
+#### Extract satellite map from Google Maps
+
+Right click on a Google Maps page to get coordinates. Also note that *longitude* comes first inside the coordinate parentheses.
+
+Within `get_map()`, feel free to experiment with the other `maptype` options for maps sourced from Google or Stamen, examples here: <https://r-graph-gallery.com/324-map-background-with-the-ggmap-library.html>.
+
+```{r, message = FALSE}
+island_map <- get_map(location = c(-70.614, 42.9885),
+                      zoom = 16,
+                      maptype = "satellite",
+                      source = "google",
+                      color = "color") # use "bw" for a black-and-white
+                                       # satellite image
+```
+
+#### Create basemap
+
+When transforming the earth from its 3-D spherical shape to a 2-D shape, various distinct projections may be used depending on the scale and purposes of a given map. A Coordinate Reference System (CRS) defines how a specific two-dimensional projection relates to real places on the earth, and therefore is an important specification in geospatial mapping. Here, we use the most popular geodetic datum, WGS84 (World Geodetic System 1984), represented by the EPSG code 4326.
+
+```{r}
+# note that the CRS is set in `coord_sf()` solely for the sake of formatting the
+# axis labels; the satellite map is already set to WGS84/EPSG:4326.
+
+satmap <- ggmap(island_map) +
+  coord_sf(crs = 4326) +
+  theme(axis.title = element_blank())
+
+satmap
+```
+
+#### Zoom in a bit more by setting coordinate axis limits
+
+```{r}
+satmap <- satmap +
+  xlim(c(-70.619, -70.6094)) +
+  ylim(c(42.9842, 42.9928))
+
+satmap
 ```
 
 ## 3) Import and plot point data
@@ -277,13 +277,13 @@ Unlike most text files, some spatial data formats include a set of several files
 
 There are three key files associated with any and all shapefiles:
 
-* .shp: the file that contains the geometry for all features.
-* .shx: the file that indexes the geometry.
-* .dbf: the file that stores feature attributes in a tabular format.
+-   .shp: the file that contains the geometry for all features.
+-   .shx: the file that indexes the geometry.
+-   .dbf: the file that stores feature attributes in a tabular format.
 
 Sometimes, a shapefile will have other associated files including:
 
-* .prj: the file that contains information on projection format including the coordinate system and projection information.
+-   .prj: the file that contains information on projection format including the coordinate system and projection information.
 
 **In short: to get a "shapefile" to load, you must have matching .shp, .shx, and .dbf files together in the same folder, each with the same file name. In these examples, we also have matching .prj files, which save us from having to assign a CRS to the shapefile ourselves.**
 
